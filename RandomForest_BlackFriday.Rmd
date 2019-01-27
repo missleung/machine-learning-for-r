@@ -25,6 +25,7 @@ We will conduct random forest to predict the number of purchase made
 # Loading data
 dat_User <- read_csv("BlackFriday-User.csv")
 dat_User <- dat_User[,!colnames(dat_User) %in% c("X1", "User_ID")]
+dat_User$Occupation <- as.factor(dat_User$Occupation) #converting to a factor
 
 
 # Train and Test data
@@ -34,6 +35,31 @@ vec_Train <- sample(1:nrow(dat_User),size = num)
 
 dat_Train <- dat_User[vec_Train,]
 dat_Test <- dat_User[-vec_Train,]
+```
+
+## Multiple Regression
+
+Before starting random forest, I want to use a simple multiple regression to understand simple correlations among the data set
+
+```{r}
+lm_multiple <- lm(sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train)
+summary(lm_multiple)
+```
+According to a summary of the multiple linear regression, we see that gender, cities, and occupations play a huge role in total purchases made. I'd like to also see all three cities and check if there are any other differences among the cities
+
+### Checking out regressions separated by cities
+```{r}
+dat_A <- dat_Train[dat_Train$City_Category=="A",]
+lm_multiple_A <- lm(sum_Purchase~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_A)
+summary(lm_multiple_A)
+
+dat_B <- dat_Train[dat_Train$City_Category=="B",]
+lm_multiple_B <- lm(sum_Purchase~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_B)
+summary(lm_multiple_B)
+
+dat_C <- dat_Train[dat_Train$City_Category=="C",]
+lm_multiple_C <- lm(sum_Purchase~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_C)
+summary(lm_multiple_C)
 ```
 
 ## Let's start the random forest!
@@ -49,7 +75,10 @@ mtry <- sqrt(ncol(dat_Train))
 tunegrid <- expand.grid(.mtry=mtry) # Looking at the randomly selected predictors
 
 # Running the random forest
+# Note that I am doing a regression random forest so I'l be using quantile random forest
 rf_default <- train(sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, method = 'qrf', metric=metric, tuneGrid=tunegrid, trControl=control) #using quantile random forest to train. Tuning parameters uses mytry (randomly selected predictors)
 print(rf_default)
 ```
+
+Rsquared 
 

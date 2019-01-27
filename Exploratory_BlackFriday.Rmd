@@ -27,6 +27,9 @@ colnames(dat_Raw) # what variables?
 
 ## Doing some sanity checks
 ```{r}
+class(dat_Raw$Occupation) #Occupation is in integer value
+dat_Raw$Occupation <- as.factor(dat_Raw$Occupation)
+
 dim(dat_Raw)
 
 length(unique(dat_Raw$User_ID))
@@ -103,11 +106,14 @@ Because of the discrepenacy, I'd like to see if there are other discrepancies am
 
 ```{r}
 # Occupational
+ggplot(dat_User, aes(x = Occupation, y=sum_Purchase)) +
+  geom_col()
 
-
-
+ggplot(dat_User, aes(x = City_Category, y=Occupation)) +
+  geom_mosaic()
 ```
 
+It may seem that the twenty different occupations could potentially be a factor in purchasing amount per person.
 ```{r}
 # How do the categories compare with the amount spent per person?
 dat_Raw
