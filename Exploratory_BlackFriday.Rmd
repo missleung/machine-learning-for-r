@@ -45,6 +45,8 @@ dat_User <- dat_Raw %>% group_by(User_ID,
             sum_Cat_2 = sum(na.omit(Product_Category_2)),
             sum_Cat_3 = sum(na.omit(Product_Category_3)),
             sum_Purchase = sum(Purchase))
+
+write.table(dat_User, "BlackFriday-User.csv")
 ```
 
 ## Let's briefly take a look at some plots
@@ -106,12 +108,10 @@ Because of the discrepenacy, I'd like to see if there are other discrepancies am
 
 ```
 
-## Including Plots
+```{r}
+# How do the categories compare with the amount spent per person?
+dat_Raw
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+ggplot(dat_spendperperson_city, aes(x = Category, y=avg_PurchasePerPerson)) +
+  geom_col()
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
