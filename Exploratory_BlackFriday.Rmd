@@ -46,7 +46,7 @@ dat_User <- dat_Raw %>% group_by(User_ID,
             sum_Cat_3 = sum(na.omit(Product_Category_3)),
             sum_Purchase = sum(Purchase))
 
-write.table(dat_User, "BlackFriday-User.csv")
+write.csv(dat_User, "BlackFriday-User.csv", row.names = F)
 ```
 
 ## Let's briefly take a look at some plots

@@ -14,21 +14,42 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(caret)
+library(randomForest)
+library(quantregForest)
 ```
 ## Purpose
 
 We will conduct random forest to predict the number of purchase made
 
 ```{r}
+# Loading data
 dat_User <- read_csv("BlackFriday-User.csv")
+dat_User <- dat_User[,!colnames(dat_User) %in% c("X1", "User_ID")]
+
+
+# Train and Test data
+set.seed(10)
+num <- round(nrow(dat_User)/2)
+vec_Train <- sample(1:nrow(dat_User),size = num)
+
+dat_Train <- dat_User[vec_Train,]
+dat_Test <- dat_User[-vec_Train,]
 ```
 
-## Including Plots
+## Let's start the random forest!
 
-You can also embed plots, for example:
+```{r}
+seed <- 10
+set.seed(seed)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+# Setting parameters on mtry tuning
+control <- trainControl(method="repeatedcv", number=10, repeats=3) # using 10-fold, repeating 3 times from caret
+metric <- "RMSE" #A string that specifies what summary metric will be used to select the optimal model. By default, possible values are "RMSE" and "Rsquared" for regression and "Accuracy" and "Kappa" for classification. 
+mtry <- sqrt(ncol(dat_Train))
+tunegrid <- expand.grid(.mtry=mtry) # Looking at the randomly selected predictors
+
+# Running the random forest
+rf_default <- train(sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, method = 'qrf', metric=metric, tuneGrid=tunegrid, trControl=control) #using quantile random forest to train. Tuning parameters uses mytry (randomly selected predictors)
+print(rf_default)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
