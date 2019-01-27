@@ -13,8 +13,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(ggmosaic)
 ```
 ## Importing data set
+
+Please download file from Kaggle "BlackFriday.csv". Data set will not be uploadeded in github
 ```{r}
 dat_Raw <- read_csv("BlackFriday.csv")
 
@@ -24,8 +27,58 @@ colnames(dat_Raw) # what variables?
 
 ## Let's briefly take a look at some plots
 ```{r}
-ggplot(dat_Raw)
+# Age
+ggplot(dat_Raw, aes(x = Age)) +
+  geom_bar()
 ```
+
+We see that most consumers are between 26-35 category. Be aware that the bins are not of equal age years!
+First bin is of 17 years
+Second bin is of 7 years
+Third bin is of 9 years
+Fourth bin is of 9 years
+Fifth bin is of 4 years
+Sixth bin is of 4 years
+Seventh bin is of rest
+
+```{r}
+# City
+ggplot(dat_Raw, aes(x = City_Category)) +
+  geom_bar()
+```
+There are city A, B, and C. City B seems to have a higher frequency than the other two cities. Would need to perhaps separate the three cities to see whether the Black Friday sales affect different categories.
+```{r}
+# Product Categories by cities
+
+dat_category_city <- dat_Raw %>% group_by(City_Category) %>% summarise(sum_Cat_1 = sum(na.omit(Product_Category_1)),
+                                                  sum_Cat_2 = sum(na.omit(Product_Category_2)),
+                                                  sum_Cat_3 = sum(na.omit(Product_Category_3))) # taking summarized values on total sum of products
+
+dat_category_city_to_plot <- dat_category_city %>% gather(Product_Category, Total_Products, sum_Cat_1:sum_Cat_3, factor_key=T) #converting to long format
+
+ggplot(dat_category_city_to_plot, aes(x = City_Category, y=Total_Products, colour= Product_Category)) +
+  geom_col()
+```
+The ratio of buying the number of products between product categories doesn't seem to vary a lot across the cities. Buying behaviour of the three cities may be similar on the product categories in terms of number of products
+
+```{r}
+# Amount spent by cities
+
+dat_amount_city <- dat_Raw %>% group_by(City_Category) %>% summarise(sum_Purchase = sum(Purchase)) # taking summarized values on total sum of amount
+ggplot(dat_amount_city, aes(x = City_Category, y=sum_Purchase)) +
+  geom_col()
+```
+It seems that the amount purchased by cities have a similar shape as the number of products sold. Now I am curious if this amount matches to the average spend per person in each city
+```{r}
+dat_spendperperson_city <- dat_Raw %>% group_by(City_Category) %>% summarise(count_Pop = length(unique(User_ID)), sum_Purchase = sum(na.omit(Purchase))) %>% mutate(avg_PurchasePerPerson = sum_Purchase/count_Pop) # taking summarized values on total sum of amount
+ggplot(dat_spendperperson_city, aes(x = City_Category, y=count_Pop)) +
+  geom_col()
+
+```
+
+This definitely shows something. It seems that even though most sales come from City B, there are not a lot of people there. Perhaps the company by now should research into these huge differences between population count and the willingness to spend for the cities.
+
+Because of the discrepenacy, I'd like to understand the spending between person for each city.
 
 ## Including Plots
 
