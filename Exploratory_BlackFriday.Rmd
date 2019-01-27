@@ -25,10 +25,32 @@ head(dat_Raw) # take a look at what's inside this csv file
 colnames(dat_Raw) # what variables?
 ```
 
+## Doing some sanity checks
+```{r}
+dim(dat_Raw)
+
+length(unique(dat_Raw$User_ID))
+```
+It seems that each row on the data set is looking at unique combinations of user ID and product ID. There are a total of 5891 users in the data set with 537577 transactions in the data set. I'd like to aggregate them to another data set by user ID so I can better understand consumer behaviours
+
+```{r}
+dat_User <- dat_Raw %>% group_by(User_ID, 
+                                 Gender, 
+                                 Age, 
+                                 Occupation, 
+                                 City_Category, 
+                                 Stay_In_Current_City_Years, 
+                                 Marital_Status) %>% 
+  summarise(sum_Cat_1 = sum(na.omit(Product_Category_1)),
+            sum_Cat_2 = sum(na.omit(Product_Category_2)),
+            sum_Cat_3 = sum(na.omit(Product_Category_3)),
+            sum_Purchase = sum(Purchase))
+```
+
 ## Let's briefly take a look at some plots
 ```{r}
 # Age
-ggplot(dat_Raw, aes(x = Age)) +
+ggplot(dat_User, aes(x = Age)) +
   geom_bar()
 ```
 
@@ -43,18 +65,14 @@ Seventh bin is of rest
 
 ```{r}
 # City
-ggplot(dat_Raw, aes(x = City_Category)) +
+ggplot(dat_User, aes(x = City_Category)) +
   geom_bar()
 ```
-There are city A, B, and C. City B seems to have a higher frequency than the other two cities. Would need to perhaps separate the three cities to see whether the Black Friday sales affect different categories.
+There are city A, B, and C. All three cities have various total of customers where C would have the most unique number of customers. Would probably separate the three cities for analysis to see whether the Black Friday sales affect different categories.
 ```{r}
 # Product Categories by cities
 
-dat_category_city <- dat_Raw %>% group_by(City_Category) %>% summarise(sum_Cat_1 = sum(na.omit(Product_Category_1)),
-                                                  sum_Cat_2 = sum(na.omit(Product_Category_2)),
-                                                  sum_Cat_3 = sum(na.omit(Product_Category_3))) # taking summarized values on total sum of products
-
-dat_category_city_to_plot <- dat_category_city %>% gather(Product_Category, Total_Products, sum_Cat_1:sum_Cat_3, factor_key=T) #converting to long format
+dat_category_city_to_plot <- dat_User %>% gather(Product_Category, Total_Products, sum_Cat_1:sum_Cat_3, factor_key=T) #converting to long format
 
 ggplot(dat_category_city_to_plot, aes(x = City_Category, y=Total_Products, colour= Product_Category)) +
   geom_col()
@@ -64,21 +82,29 @@ The ratio of buying the number of products between product categories doesn't se
 ```{r}
 # Amount spent by cities
 
-dat_amount_city <- dat_Raw %>% group_by(City_Category) %>% summarise(sum_Purchase = sum(Purchase)) # taking summarized values on total sum of amount
-ggplot(dat_amount_city, aes(x = City_Category, y=sum_Purchase)) +
+ggplot(dat_User, aes(x = City_Category, y=sum_Purchase)) +
   geom_col()
 ```
-It seems that the amount purchased by cities have a similar shape as the number of products sold. Now I am curious if this amount matches to the average spend per person in each city
+Amount purchase definitely varies between the cities. We see that most of the sales in revenue made is coming from City B. However, as shown previously, there are a lot less customers in city B than in city C. These differences between the two plots show there's a spending discrepency between the cities. Hence, when we run clustering analyses, we may consider splitting the datasets by cities first.
 ```{r}
-dat_spendperperson_city <- dat_Raw %>% group_by(City_Category) %>% summarise(count_Pop = length(unique(User_ID)), sum_Purchase = sum(na.omit(Purchase))) %>% mutate(avg_PurchasePerPerson = sum_Purchase/count_Pop) # taking summarized values on total sum of amount
-ggplot(dat_spendperperson_city, aes(x = City_Category, y=count_Pop)) +
+#Spending per person by city
+
+dat_spendperperson_city <- dat_User %>% group_by(City_Category) %>% summarise(count_Pop = length(unique(User_ID)), all_Purchase = sum(na.omit(sum_Purchase))) %>% mutate(avg_PurchasePerPerson = all_Purchase/count_Pop) # taking summarized values on total sum of amount
+ggplot(dat_spendperperson_city, aes(x = City_Category, y=avg_PurchasePerPerson)) +
   geom_col()
 
 ```
 
-This definitely shows something. It seems that even though most sales come from City B, there are not a lot of people there. Perhaps the company by now should research into these huge differences between population count and the willingness to spend for the cities.
+This definitely shows something. It seems that even though there are a lot of customers coming from city C, they spend less than half of what people spend from City A and City B. Perhaps the company by now should research into these differences between the buying behaviour amongst the cities and investigate the discrepancy on willingness to spend.
 
-Because of the discrepenacy, I'd like to understand the spending between person for each city.
+Because of the discrepenacy, I'd like to see if there are other discrepancies among the cities that might've induced their differences of spendings.
+
+```{r}
+# Occupational
+
+
+
+```
 
 ## Including Plots
 
