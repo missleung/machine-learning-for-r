@@ -144,8 +144,8 @@ Let's briefly take a look at some plots
 
 ``` r
 # Age
-ggplot(dat_User, aes(x = Age)) +
-  geom_bar()
+print(ggplot(dat_User, aes(x = Age)) +
+  geom_bar())
 ```
 
 ![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-5-1.png)
@@ -154,8 +154,8 @@ We see that most consumers are between 26-35 category. Be aware that the bins ar
 
 ``` r
 # City
-ggplot(dat_User, aes(x = City_Category)) +
-  geom_bar()
+print(ggplot(dat_User, aes(x = City_Category)) +
+  geom_bar())
 ```
 
 ![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-6-1.png) There are city A, B, and C. All three cities have various total of customers where C would have the most unique number of customers. Would probably separate the three cities for analysis to see whether the Black Friday sales affect different categories.
@@ -164,9 +164,8 @@ ggplot(dat_User, aes(x = City_Category)) +
 # Product Categories by cities
 
 dat_category_city_to_plot <- dat_User %>% gather(Product_Category, Total_Products, sum_Cat_1:sum_Cat_3, factor_key=T) #converting to long format
-
-ggplot(dat_category_city_to_plot, aes(x = City_Category, y=Total_Products, colour= Product_Category)) +
-  geom_col()
+print(ggplot(dat_category_city_to_plot, aes(x = City_Category, y=Total_Products, colour= Product_Category)) +
+  geom_col())
 ```
 
 ![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-7-1.png) The ratio of buying the number of products between product categories doesn't seem to vary a lot across the cities. Buying behaviour of the three cities may be similar on the product categories in terms of number of products
@@ -174,8 +173,8 @@ ggplot(dat_category_city_to_plot, aes(x = City_Category, y=Total_Products, colou
 ``` r
 # Amount spent by cities
 
-ggplot(dat_User, aes(x = City_Category, y=sum_Purchase)) +
-  geom_col()
+print(ggplot(dat_User, aes(x = City_Category, y=sum_Purchase)) +
+  geom_col())
 ```
 
 ![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-8-1.png) Amount purchase definitely varies between the cities. We see that most of the sales in revenue made is coming from City B. However, as shown previously, there are a lot less customers in city B than in city C. These differences between the two plots show there's a spending discrepency between the cities. Hence, when we run clustering analyses, we may consider splitting the datasets by cities first.
@@ -184,8 +183,8 @@ ggplot(dat_User, aes(x = City_Category, y=sum_Purchase)) +
 #Spending per person by city
 
 dat_spendperperson_city <- dat_User %>% group_by(City_Category) %>% summarise(count_Pop = length(unique(User_ID)), all_Purchase = sum(na.omit(sum_Purchase))) %>% mutate(avg_PurchasePerPerson = all_Purchase/count_Pop) # taking summarized values on total sum of amount
-ggplot(dat_spendperperson_city, aes(x = City_Category, y=avg_PurchasePerPerson)) +
-  geom_col()
+print(ggplot(dat_spendperperson_city, aes(x = City_Category, y=avg_PurchasePerPerson)) +
+  geom_col())
 ```
 
 ![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-9-1.png)
@@ -198,23 +197,23 @@ Because of the discrepenacy, I'd like to see if there are other discrepancies am
 #Spending per person by occupation
 
 dat_spendperperson_occupation <- dat_User %>% group_by(Occupation, City_Category) %>% summarise(count_Pop = n(), all_Purchase = sum(na.omit(sum_Purchase))) %>% mutate(avg_PurchasePerPerson = all_Purchase/count_Pop) # taking summarized values on total sum of amount
-ggplot(dat_spendperperson_occupation, aes(x = Occupation, y=avg_PurchasePerPerson)) +
-  geom_col()
+print(ggplot(dat_spendperperson_occupation, aes(x = Occupation, y=avg_PurchasePerPerson)) +
+  geom_col())
 ```
 
 ![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 ``` r
 # Occupational; spendings of purchases separated by occupation
-ggplot(dat_User, aes(x = Occupation, y=sum_Purchase, colour=City_Category)) +
-  geom_col()
+print(ggplot(dat_User, aes(x = Occupation, y=sum_Purchase, colour=City_Category)) +
+  geom_col())
 ```
 
 ![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-11-1.png)
 
 ``` r
-ggplot(dat_User, aes(x = Occupation)) +
-  geom_bar()
+print(ggplot(dat_User, aes(x = Occupation)) +
+  geom_bar())
 ```
 
 ![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-11-2.png)
