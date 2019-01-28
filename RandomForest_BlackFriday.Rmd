@@ -2,7 +2,7 @@
 title: "Random Forest"
 author: "Lisa Leung"
 date: '2019-01-27'
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -87,6 +87,7 @@ metric <- "RMSE" #A string that specifies what summary metric will be used to se
 mtry <- sqrt(ncol(dat_Train))
 tunegrid <- expand.grid(.mtry=mtry) # Change this parameter to change the candidates for tuning parameters
 preProc = c("center", "scale")
+tunelength=10
 
 # Running the random forest
 # Note that I am doing a regression random forest so I'l be using quantile random forest. The train() function is used to tune the model
@@ -96,12 +97,13 @@ rf_simple <- train(
   metric=metric, #using RMSE (root mean square error) to define my loss function
   tuneGrid=tunegrid, # Tuning parameters uses mytry (randomly selected predictors);
   trControl=control, # method="repeatedcv",number=10, repeats=3
+  tunelength=tunelength,
   preProc=preProc) #centering and scaling the predictors
 print(rf_simple)
 ```
 
 ```{r}
-ggplot(rf_simple)
+#ggplot(rf_simple)
 ```
 
 Rsquared 
