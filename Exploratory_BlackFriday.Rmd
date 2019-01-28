@@ -105,12 +105,20 @@ This definitely shows something. It seems that even though there are a lot of cu
 Because of the discrepenacy, I'd like to see if there are other discrepancies among the cities that might've induced their differences of spendings.
 
 ```{r}
-# Occupational
-ggplot(dat_User, aes(x = Occupation, y=sum_Purchase)) +
+#Spending per person by occupation
+
+dat_spendperperson_occupation <- dat_User %>% group_by(Occupation, City_Category) %>% summarise(count_Pop = n(), all_Purchase = sum(na.omit(sum_Purchase))) %>% mutate(avg_PurchasePerPerson = all_Purchase/count_Pop) # taking summarized values on total sum of amount
+ggplot(dat_spendperperson_occupation, aes(x = Occupation, y=avg_PurchasePerPerson)) +
   geom_col()
 
-ggplot(dat_User, aes(x = City_Category, y=Occupation)) +
-  geom_mosaic()
+```
+```{r}
+# Occupational; spendings of purchases separated by occupation
+ggplot(dat_User, aes(x = Occupation, y=sum_Purchase, colour=City_Category)) +
+  geom_col()
+
+ggplot(dat_User, aes(x = Occupation)) +
+  geom_bar()
 ```
 
 It may seem that the twenty different occupations could potentially be a factor in purchasing amount per person.

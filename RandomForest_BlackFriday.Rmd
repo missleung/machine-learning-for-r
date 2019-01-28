@@ -45,7 +45,12 @@ Before starting random forest, I want to use a simple multiple regression to und
 lm_multiple <- lm(sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train)
 summary(lm_multiple)
 ```
-According to a summary of the multiple linear regression, we see that gender, cities, and occupations play a huge role in total purchases made. I'd like to also see all three cities and check if there are any other differences among the cities
+According to a summary of the multiple linear regression, we see that gender, cities, and occupations play a huge role in total purchases made. I'd like to also see all three cities and check if there are any other differences among the cities.
+
+A couple of measures we will use to compare multiple linear regression to random forests:
+
+Multiple R-squared is squared of correlation between fitted and actual values.
+Residual standard error is root(mean squared error)
 
 ### Checking out regressions separated by cities
 ```{r}
@@ -61,23 +66,42 @@ dat_C <- dat_Train[dat_Train$City_Category=="C",]
 lm_multiple_C <- lm(sum_Purchase~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_C)
 summary(lm_multiple_C)
 ```
+Interestingly, the spendings seem to affect most on city A and city B. We see that occupation 20 seem to spend $739,824 more on average
 
-## Let's start the random forest!
+
+# Let's start the random forest!
+
+## We will use train to tune parameters. The first train will be optimizing the randomly selected predictors
 
 ```{r}
 seed <- 10
 set.seed(seed)
 
 # Setting parameters on mtry tuning
-control <- trainControl(method="repeatedcv", number=10, repeats=3) # using 10-fold, repeating 3 times from caret
+control <- trainControl( #trainControl is used to alter the default methods in train function
+  method="repeatedcv", # K-fold CV; by default, it uses bootstrap sampling
+  number=5, # 3 repeats of 5-fold CV
+  repeats=3) 
+
 metric <- "RMSE" #A string that specifies what summary metric will be used to select the optimal model. By default, possible values are "RMSE" and "Rsquared" for regression and "Accuracy" and "Kappa" for classification. 
 mtry <- sqrt(ncol(dat_Train))
-tunegrid <- expand.grid(.mtry=mtry) # Looking at the randomly selected predictors
+tunegrid <- expand.grid(.mtry=mtry) # Change this parameter to change the candidates for tuning parameters
+preProc = c("center", "scale")
 
 # Running the random forest
-# Note that I am doing a regression random forest so I'l be using quantile random forest
-rf_default <- train(sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, method = 'qrf', metric=metric, tuneGrid=tunegrid, trControl=control) #using quantile random forest to train. Tuning parameters uses mytry (randomly selected predictors)
-print(rf_default)
+# Note that I am doing a regression random forest so I'l be using quantile random forest. The train() function is used to tune the model
+rf_simple <- train(
+  sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
+  method = 'qrf', #using quantile random forest to train.
+  metric=metric, #using RMSE (root mean square error) to define my loss function
+  tuneGrid=tunegrid, # Tuning parameters uses mytry (randomly selected predictors);
+  trControl=control, # method="repeatedcv",number=10, repeats=3
+  preProc=preProc) #centering and scaling the predictors
+print(rf_simple)
+```
+
+```{r}
+ggplot(rf_simple)
 ```
 
 Rsquared 
