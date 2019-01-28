@@ -2,7 +2,7 @@
 title: "Black Friday"
 author: "Lisa Leung"
 date: '2019-01-26'
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -122,10 +122,3 @@ ggplot(dat_User, aes(x = Occupation)) +
 ```
 
 It may seem that the twenty different occupations could potentially be a factor in purchasing amount per person.
-```{r}
-# How do the categories compare with the amount spent per person?
-dat_Raw
-
-ggplot(dat_spendperperson_city, aes(x = Category, y=avg_PurchasePerPerson)) +
-  geom_col()
-```
