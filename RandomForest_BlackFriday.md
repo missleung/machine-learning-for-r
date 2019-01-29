@@ -10,14 +10,14 @@ Load all libraries
 library(tidyverse)
 ```
 
-    ## ── Attaching packages ──────────────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
+    ## ── Attaching packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
 
     ## ✔ ggplot2 3.1.0     ✔ purrr   0.2.4
     ## ✔ tibble  1.4.2     ✔ dplyr   0.7.4
     ## ✔ tidyr   0.8.0     ✔ stringr 1.3.0
     ## ✔ readr   1.1.1     ✔ forcats 0.3.0
 
-    ## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ── Conflicts ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
 
@@ -104,7 +104,7 @@ dat_Test <- dat_User[-vec_Train,]
 Multiple Regression
 -------------------
 
-Before starting random forest, I want to use a simple multiple regression to understand simple correlations among the data set
+Before starting random forest, I want to use a multiple regression as a base model on the data set.
 
 ``` r
 lm_multiple <- lm(sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train)
@@ -170,7 +170,7 @@ A couple of measures we will use to compare multiple linear regression to random
 
 Multiple R-squared is squared of correlation between fitted and actual values. Residual standard error is root(mean squared error).
 
-Ultimately, we will also measure the error of predicted rate
+Ultimately, we will also measure the error of predicted rate.
 
 We're going to fit the test data into our multiple linear regression and see how well it predicts.
 --------------------------------------------------------------------------------------------------
@@ -193,7 +193,7 @@ print(Rsq_lm)
 
     ## [1] 0.1568235
 
-Multiple linear regression seem to do a pretty decent job in terms of predicting values.
+Multiple linear regression seem to do a pretty decent job in terms of predicting values. Later, we will see if we can beat this measure through random forest regression.
 
 ### Checking out regressions separated by cities
 
@@ -368,7 +368,7 @@ summary(lm_multiple_C)
     ## Multiple R-squared:  0.0356, Adjusted R-squared:  0.01566 
     ## F-statistic: 1.786 on 32 and 1548 DF,  p-value: 0.004612
 
-Interestingly, the spendings seem to affect most on city A and city B. We see that occupation 20 seem to spend $739,824 more on average
+Interestingly, the spendings seem to affect most on city A and city B. We see that occupation 20 seem to spend $739,824 more on average.
 
 Let's start the random forest!
 ==============================
@@ -427,9 +427,7 @@ print(rf_simple)
 ggplot(rf_simple)
 ```
 
-![](RandomForest_BlackFriday_files/figure-markdown_github/unnamed-chunk-7-1.png)
-
-Rsquared
+![](RandomForest_BlackFriday_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
 ``` r
 # Running the gradient boosting random forest; keeping everything else the same 
@@ -1397,7 +1395,27 @@ Using gradient random forest boosting, it seems like the Rsquared values increas
 ggplot(rf_gbm)
 ```
 
-![](RandomForest_BlackFriday_files/figure-markdown_github/unnamed-chunk-9-1.png)
+![](RandomForest_BlackFriday_files/figure-markdown_github/unnamed-chunk-10-1.png)
+
+``` r
+# Testing the predicted values with test data
+vals_predicted_gbm <- predict(rf_gbm, newdata = dat_Test)
+vals_errors_gbm <- dat_Test$sum_Purchase-vals_predicted_gbm
+RMSE_gbm <- sqrt(sum(vals_errors_gbm^2)/length(vals_errors_gbm))
+print(RMSE_gbm)
+```
+
+    ## [1] 846990.5
+
+``` r
+# R squared on predicted values
+Rsq_gbm <- cor(vals_predicted_gbm, dat_Test$sum_Purchase)^2
+print(Rsq_gbm)
+```
+
+    ## [1] 0.1718203
+
+We see an improvement on Rsquared and RMSE on the gradient random forest model of 0.1696045 and 848294.2 rather than 0.1568235 and 854686.1 from multiple regression. However, only default parameters were tuned. Now I'd like to custom tune a wider range of parameters in the tunegrid on gradient boosting random forest.
 
 ``` r
 # Running the gradient boosting random forest for more custom tuning parameters; keeping everything else the same 
@@ -1408,8 +1426,8 @@ tunegrid <- expand.grid(n.trees = (1:10)*50, # number of trees, I originally tri
                         # I originally tried interaction.depth = 1
                         shrinkage = c(0.1,0.01), # learning rate (how fast can the algorithm adapt to)
                         # Learning rate for 0.01 shows stability of decreasing in RMSE than 0.1. 
-                        n.minobsinnode = 20
-                        ) # Change this parameter to change the candidates for tuning parameters
+                        n.minobsinnode = 20# minimum number of samples in the tree
+                        ) 
 
 
 seed <- 10
@@ -1547,4 +1565,22 @@ print(rf_gbm2)
 ggplot(rf_gbm2)
 ```
 
-![](RandomForest_BlackFriday_files/figure-markdown_github/unnamed-chunk-11-1.png)
+![](RandomForest_BlackFriday_files/figure-markdown_github/unnamed-chunk-14-1.png)
+
+``` r
+# Testing the predicted values with test data
+vals_predicted_gbm2 <- predict(rf_gbm2, newdata = dat_Test)
+vals_errors_gbm2 <- dat_Test$sum_Purchase-vals_predicted_gbm2
+RMSE_gbm2 <- sqrt(sum(vals_errors_gbm2^2)/length(vals_errors_gbm2))
+print(RMSE_gbm2)
+```
+
+    ## [1] 848508
+
+``` r
+# R squared on predicted values
+Rsq_gbm2 <- cor(vals_predicted_gbm2, dat_Test$sum_Purchase)^2
+print(Rsq_gbm2)
+```
+
+    ## [1] 0.1692089
