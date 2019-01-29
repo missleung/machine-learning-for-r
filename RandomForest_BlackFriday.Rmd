@@ -15,11 +15,13 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(caret)
 library(randomForest)
-library(quantregForest)
+library(xgboost)
 ```
 ## Purpose
 
-We will conduct random forest to predict the number of purchase made
+We will conduct random forest to predict the amount of purchase made.
+
+Because amount of purchase made is very well known to be highly correlated with the product category, I will omit the product category and try to instead find more information about who are the consumers who have bought a lot more than the others according to their demographics. Hence, we will not see product category as a predictor in my models.
 
 ```{r}
 # Loading data
@@ -123,6 +125,9 @@ print(rf_simple)
 ggplot(rf_simple)
 ```
 
+## Gradient boosting random forest 
+
+Next I'd like to try is gradient boosting random forest. Boosting algorithms are built so that in each iteration/model that is ran, the observational data points that have larger residuals are weighted more heavily, so that the model can focus more on the data points that were estimated poorly on the previous iteration/model. Adaboost would've been another alternative, however, our random forest is not predicting classes but is predicting numerical values.  
 
 ```{r}
 # Running the gradient boosting random forest; keeping everything else the same 
@@ -134,7 +139,8 @@ rf_gbm <- train(
   method = 'gbm', #gradient boosting method; on each 
   metric=metric, #using RMSE (root mean square error) to define my loss function
   trControl=control, # method="repeatedcv",number=10, repeats=3
-  preProc=preProc) #centering and scaling the predictors
+  preProc=preProc,
+  verbose=F) #centering and scaling the predictors
 print(rf_gbm)
 ```
 
@@ -204,4 +210,50 @@ print(RMSE_gbm2)
 # R squared on predicted values
 Rsq_gbm2 <- cor(vals_predicted_gbm2, dat_Test$sum_Purchase)^2
 print(Rsq_gbm2)
+```
+
+
+## XGBoost Random Forest
+
+Next model I'd like to try is the XGBoost (eXtreme Gradient Boosting) random forest.
+
+```{r}
+seed <- 10
+set.seed(seed)
+rf_xgbm <- train(
+  sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
+  method = 'xgbTree', #gradient boosting method; on each 
+  metric=metric, #using RMSE (root mean square error) to define my loss function
+  trControl=control, # method="repeatedcv",number=10, repeats=3
+  preProc=preProc, #centering and scaling the predictors
+  verbose=F
+)
+print(rf_xgbm)
+```
+
+Simply running the XGBoost Random Forest gave very bad rsquared correlations and high RMSEs. I will attempt to tune the paramters in XGBoost and see whether it will run better.
+
+```{r}
+# Manually adding in a grid to tune three parameters:
+tunegrid <- expand.grid(
+  nrounds = 1000,
+  eta = c(0.0001, 0.00001, 0.000001), # eta (learning rate) of 0.01, 0.001 are not great. Need to use smaller numbers
+  max_depth = 1:10,
+  gamma = 1,
+  colsample_bytree = 0.8,
+  min_child_weight = 1,
+  subsample = 0.75
+)
+
+seed <- 10
+set.seed(seed)
+rf_xgbm2 <- train(
+  sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
+  method = 'xgbTree', #eXtreme gradient boosting method
+  metric=metric, #using RMSE (root mean square error) to define my loss function
+  trControl=control, # method="repeatedcv",number=10, repeats=3
+  preProc=preProc, #centering and scaling the predictors
+  tuneGrid=tunegrid,
+  verbose=F)
+print(rf_xgbm2)
 ```
