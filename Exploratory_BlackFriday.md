@@ -10,20 +10,32 @@ Load all libraries
 library(tidyverse)
 ```
 
-    ## ── Attaching packages ──────────────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
+    ## ── Attaching packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
 
     ## ✔ ggplot2 3.1.0     ✔ purrr   0.2.4
     ## ✔ tibble  1.4.2     ✔ dplyr   0.7.4
     ## ✔ tidyr   0.8.0     ✔ stringr 1.3.0
     ## ✔ readr   1.1.1     ✔ forcats 0.3.0
 
-    ## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ── Conflicts ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
 
 ``` r
 library(ggmosaic)
+library(GGally)
 ```
+
+    ## 
+    ## Attaching package: 'GGally'
+
+    ## The following object is masked from 'package:ggmosaic':
+    ## 
+    ##     happy
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     nasa
 
 Importing data set
 ------------------
@@ -219,3 +231,16 @@ print(ggplot(dat_User, aes(x = Occupation)) +
 ![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-11-2.png)
 
 It may seem that the twenty different occupations could potentially be a factor in purchasing amount per person.
+
+Correlation matrix
+------------------
+
+Last but not least, we should do a correlation matrix on all variables we have for the data set.
+
+``` r
+dat_User$City_Category <- as.factor(dat_User$City_Category)
+dat_User$Marital_Status <- as.factor(dat_User$Marital_Status)
+ggpairs(dat_User[,c("Gender", "Marital_Status", "City_Category")], aes(colour = City_Category, alpha = 0.4)) # ggplot couldn't plot a variable with too many categories - will look at other variables later.
+```
+
+![](Exploratory_BlackFriday_files/figure-markdown_github/unnamed-chunk-12-1.png)

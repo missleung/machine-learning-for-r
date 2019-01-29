@@ -39,7 +39,7 @@ dat_Test <- dat_User[-vec_Train,]
 
 ## Multiple Regression
 
-Before starting random forest, I want to use a simple multiple regression to understand simple correlations among the data set
+Before starting random forest, I want to use a multiple regression as a base model on the data set.
 
 ```{r}
 lm_multiple <- lm(sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train)
@@ -70,7 +70,7 @@ Rsq_lm <- cor(vals_predicted, dat_Test$sum_Purchase)^2
 print(Rsq_lm)
 ```
 
-Multiple linear regression seem to do a pretty decent job in terms of predicting values.
+Multiple linear regression seem to do a pretty decent job in terms of predicting values. Later, we will see if we can beat this measure through random forest regression.
 
 ### Checking out regressions separated by cities
 ```{r}
@@ -86,7 +86,7 @@ dat_C <- dat_Train[dat_Train$City_Category=="C",]
 lm_multiple_C <- lm(sum_Purchase~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_C)
 summary(lm_multiple_C)
 ```
-Interestingly, the spendings seem to affect most on city A and city B. We see that occupation 20 seem to spend $739,824 more on average
+Interestingly, the spendings seem to affect most on city A and city B. We see that occupation 20 seem to spend $739,824 more on average.
 
 
 # Let's start the random forest!
@@ -146,7 +146,6 @@ ggplot(rf_gbm)
 
 ```{r}
 # Testing the predicted values with test data
-
 vals_predicted_gbm <- predict(rf_gbm, newdata = dat_Test)
 vals_errors_gbm <- dat_Test$sum_Purchase-vals_predicted_gbm
 RMSE_gbm <- sqrt(sum(vals_errors_gbm^2)/length(vals_errors_gbm))
@@ -159,7 +158,7 @@ Rsq_gbm <- cor(vals_predicted_gbm, dat_Test$sum_Purchase)^2
 print(Rsq_gbm)
 ```
 
-We see an improvement on Rsquared and RMSE on the gradient random forest model of 848294.2 than 854686.1 from multiple regression rather than 
+We see an improvement on Rsquared and RMSE on the gradient random forest model of 0.1696045 and 848294.2 rather than 0.1568235 and 854686.1 from multiple regression. However, only default parameters were tuned. Now I'd like to custom tune a wider range of parameters in the tunegrid on gradient boosting random forest.
 
 ```{r}
 # Running the gradient boosting random forest for more custom tuning parameters; keeping everything else the same 
@@ -190,4 +189,19 @@ print(rf_gbm2)
 
 ```{r}
 ggplot(rf_gbm2)
+```
+
+
+```{r}
+# Testing the predicted values with test data
+vals_predicted_gbm2 <- predict(rf_gbm2, newdata = dat_Test)
+vals_errors_gbm2 <- dat_Test$sum_Purchase-vals_predicted_gbm2
+RMSE_gbm2 <- sqrt(sum(vals_errors_gbm2^2)/length(vals_errors_gbm2))
+print(RMSE_gbm2)
+```
+
+```{r}
+# R squared on predicted values
+Rsq_gbm2 <- cor(vals_predicted_gbm2, dat_Test$sum_Purchase)^2
+print(Rsq_gbm2)
 ```

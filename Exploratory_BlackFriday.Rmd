@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(ggmosaic)
+library(GGally)
 ```
 ## Importing data set
 
@@ -74,6 +75,7 @@ print(ggplot(dat_User, aes(x = City_Category)) +
   geom_bar())
 ```
 There are city A, B, and C. All three cities have various total of customers where C would have the most unique number of customers. Would probably separate the three cities for analysis to see whether the Black Friday sales affect different categories.
+
 ```{r}
 # Product Categories by cities
 
@@ -90,6 +92,7 @@ print(ggplot(dat_User, aes(x = City_Category, y=sum_Purchase)) +
   geom_col())
 ```
 Amount purchase definitely varies between the cities. We see that most of the sales in revenue made is coming from City B. However, as shown previously, there are a lot less customers in city B than in city C. These differences between the two plots show there's a spending discrepency between the cities. Hence, when we run clustering analyses, we may consider splitting the datasets by cities first.
+
 ```{r}
 #Spending per person by city
 
@@ -121,3 +124,12 @@ print(ggplot(dat_User, aes(x = Occupation)) +
 ```
 
 It may seem that the twenty different occupations could potentially be a factor in purchasing amount per person.
+
+## Correlation matrix
+
+Last but not least, we should do a correlation matrix on all variables we have for the data set.
+```{r}
+dat_User$City_Category <- as.factor(dat_User$City_Category)
+dat_User$Marital_Status <- as.factor(dat_User$Marital_Status)
+ggpairs(dat_User[,c("Gender", "Marital_Status", "City_Category")], aes(colour = City_Category, alpha = 0.4)) # ggplot couldn't plot a variable with too many categories - will look at other variables later.
+```
