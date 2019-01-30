@@ -50,10 +50,34 @@ dat_User <- dat_Raw %>% group_by(User_ID,
             sum_Cat_3 = sum(na.omit(Product_Category_3)),
             sum_Purchase = sum(Purchase))
 
-write.csv(dat_User, "BlackFriday-User.csv", row.names = F)
 ```
 
 ## Let's briefly take a look at some plots
+
+The first plot that I'd like to take a look at is the outcome purchases. Outcome purchases should be approximately normally distributed.
+
+```{r}
+# Our main outcome: 
+print(ggplot(dat_User, aes(x = sum_Purchase)) +
+  geom_histogram())
+
+```
+
+Clearly, the sum_Purachse is a right skewed distribution. In order to account for that, I will transform the outcome so that the distribution of it will become more of a  bell-shaped curve. 
+```{r}
+# Transforming the sum_Purchase
+dat_User <- dat_User %>% mutate(sum_Purchase_log = log(sum_Purchase))
+
+write_csv(dat_User,"BlackFriday-User.csv")
+```
+### Plotting the transformed outcome again.
+```{r}
+print(ggplot(dat_User, aes(x = sum_Purchase_log)) +
+  geom_histogram())
+```
+
+Now that this newly transformed distribution resembles more of a normal distribution, we will use sum_Purchase_log as our new outcome of interest.
+
 ```{r}
 # Age
 print(ggplot(dat_User, aes(x = Age)) +
@@ -78,8 +102,8 @@ There are city A, B, and C. All three cities have various total of customers whe
 
 ```{r}
 # Product Categories by cities
-
 dat_category_city_to_plot <- dat_User %>% gather(Product_Category, Total_Products, sum_Cat_1:sum_Cat_3, factor_key=T) #converting to long format
+
 print(ggplot(dat_category_city_to_plot, aes(x = City_Category, y=Total_Products, colour= Product_Category)) +
   geom_col())
 ```
@@ -88,7 +112,7 @@ The ratio of buying the number of products between product categories doesn't se
 ```{r}
 # Amount spent by cities
 
-print(ggplot(dat_User, aes(x = City_Category, y=sum_Purchase)) +
+print(ggplot(dat_User, aes(x = City_Category, y=sum_Purchase_log)) +
   geom_col())
 ```
 Amount purchase definitely varies between the cities. We see that most of the sales in revenue made is coming from City B. However, as shown previously, there are a lot less customers in city B than in city C. These differences between the two plots show there's a spending discrepency between the cities. Hence, when we run clustering analyses, we may consider splitting the datasets by cities first.
@@ -96,7 +120,7 @@ Amount purchase definitely varies between the cities. We see that most of the sa
 ```{r}
 #Spending per person by city
 
-dat_spendperperson_city <- dat_User %>% group_by(City_Category) %>% summarise(count_Pop = length(unique(User_ID)), all_Purchase = sum(na.omit(sum_Purchase))) %>% mutate(avg_PurchasePerPerson = all_Purchase/count_Pop) # taking summarized values on total sum of amount
+dat_spendperperson_city <- dat_User %>% group_by(City_Category) %>% summarise(count_Pop = n(), all_Purchase = sum(na.omit(sum_Purchase))) %>% mutate(avg_PurchasePerPerson = all_Purchase/count_Pop) # taking summarized values on total sum of amount
 print(ggplot(dat_spendperperson_city, aes(x = City_Category, y=avg_PurchasePerPerson)) +
   geom_col())
 

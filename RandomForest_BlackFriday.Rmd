@@ -44,51 +44,53 @@ dat_Test <- dat_User[-vec_Train,]
 Before starting random forest, I want to use a multiple regression as a base model on the data set.
 
 ```{r}
-lm_multiple <- lm(sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train)
+lm_multiple <- lm(sum_Purchase_log~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train)
 summary(lm_multiple)
 ```
-According to a summary of the multiple linear regression, we see that gender, cities, and occupations play a huge role in total purchases made. I'd like to also see all three cities and check if there are any other differences among the cities.
+According to a summary of the multiple linear regression, we see that gender, cities, and occupations play a huge role in log(total purchases made). I'd like to also see all three cities and check if there are any other differences among the cities.
 
 A couple of measures we will use to compare multiple linear regression to random forests:
 
-Multiple R-squared is squared of correlation between fitted and actual values.
-Residual standard error is root(mean squared error).
+Multiple R-squared is squared of correlation between fitted and actual values. For the multiple linear regression on the training data, it would be 0.1481.
+Residual standard error is root(mean squared error). For the multiple linear regression on training data, it would be 0.9206.
 
-Ultimately, we will also measure the error of predicted rate.
+In addition to those two measures, I will also compare the measures of predicted vs actual data points on the dat_Test data set (testing data). RMSE and R-squared will also be the measures of assessing the model predictions for dat_Test.
 
 ## We're going to fit the test data into our multiple linear regression and see how well it predicts.
 
 ```{r}
 # Going to manually calculate the RMSE with the multiple linear regression
 vals_predicted <- predict.lm(lm_multiple, newdata = dat_Test)
-vals_errors <- dat_Test$sum_Purchase-vals_predicted
+vals_errors <- dat_Test$sum_Purchase_log-vals_predicted
 RMSE_lm <- sqrt(sum(vals_errors^2)/length(vals_errors))
 print(RMSE_lm)
 ```
 
 ```{r}
 # R squared on predicted values
-Rsq_lm <- cor(vals_predicted, dat_Test$sum_Purchase)^2
+Rsq_lm <- cor(vals_predicted, dat_Test$sum_Purchase_log)^2
 print(Rsq_lm)
 ```
 
 Multiple linear regression seem to do a pretty decent job in terms of predicting values. Later, we will see if we can beat this measure through random forest regression.
 
+As a side note, we have RMSE = 0.9178197 and R-squared = 0.1472413 on the test data set.
+
 ### Checking out regressions separated by cities
 ```{r}
 dat_A <- dat_Train[dat_Train$City_Category=="A",]
-lm_multiple_A <- lm(sum_Purchase~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_A)
+lm_multiple_A <- lm(sum_Purchase_log~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_A)
 summary(lm_multiple_A)
 
 dat_B <- dat_Train[dat_Train$City_Category=="B",]
-lm_multiple_B <- lm(sum_Purchase~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_B)
+lm_multiple_B <- lm(sum_Purchase_log~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_B)
 summary(lm_multiple_B)
 
 dat_C <- dat_Train[dat_Train$City_Category=="C",]
-lm_multiple_C <- lm(sum_Purchase~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_C)
+lm_multiple_C <- lm(sum_Purchase_log~Gender+Age+Occupation+Stay_In_Current_City_Years + Marital_Status, data=dat_C)
 summary(lm_multiple_C)
 ```
-Interestingly, the spendings seem to affect most on city A and city B. We see that occupation 20 seem to spend $739,824 more on average.
+Interestingly, the spendings seem to among the three cities have different patterns. Interestingly, the spendings between age categories seem to differ in City C. Taking occupation 0 as a baseline, I will investigate in the occupational categories for the cities separately. Overall, I will investigate more on occupation category 3, 4, 6, 10, 13, 20 since they all seem to show a relatively higher significance among the rest of the occupations, whereas the rest of the occupations don't seem to differ from occupation 0.
 
 
 # Let's start the random forest!
@@ -112,7 +114,7 @@ preProc = c("center", "scale")
 seed <- 10
 set.seed(seed)
 rf_simple <- train(
-  sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
+  sum_Purchase_log~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
   method = 'rf', #using random forest to train. FYI, I've accidentally used qrf which is supposed to look at high dimensional data. It was usedto estimate conditional quantiles - we are not using that. Big oops!
   metric=metric, #using RMSE (root mean square error) to define my loss function
   tuneGrid=tunegrid, # Tuning parameters uses mytry (randomly selected predictors);
@@ -121,9 +123,27 @@ rf_simple <- train(
 print(rf_simple)
 ```
 
+Using a basic random forest and tuning on the number of predictors, we get the optimal model of mtry = 3. We get Rsquared = 0.125 and RMSE = 0.0929
+
 ```{r}
 ggplot(rf_simple)
 ```
+
+```{r}
+# Testing the predicted values with test data
+vals_predicted_rf_simple <- predict(rf_simple, newdata = dat_Test)
+vals_errors_rf_simple <- dat_Test$sum_Purchase_log-vals_predicted_rf_simple
+RMSE_rf_simple <- sqrt(sum(vals_errors_rf_simple^2)/length(vals_errors_rf_simple))
+print(RMSE_rf_simple)
+```
+
+```{r}
+# R squared on predicted values
+Rsq_rf_simple <- cor(vals_predicted_rf_simple, dat_Test$sum_Purchase_log)^2
+print(Rsq_rf_simple)
+```
+
+Based on the error measures of test data on the random forest. The basic random forest does not seem to improve the multiple linear regression. Hence, we will try to improve the random forest by using the gradient boosting method.
 
 ## Gradient boosting random forest 
 
@@ -135,7 +155,7 @@ Next I'd like to try is gradient boosting random forest. Boosting algorithms are
 seed <- 10
 set.seed(seed)
 rf_gbm <- train(
-  sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
+  sum_Purchase_log~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
   method = 'gbm', #gradient boosting method; on each 
   metric=metric, #using RMSE (root mean square error) to define my loss function
   trControl=control, # method="repeatedcv",number=10, repeats=3
@@ -144,7 +164,7 @@ rf_gbm <- train(
 print(rf_gbm)
 ```
 
-Using gradient random forest boosting, it seems like the Rsquared values increased at depth = 2. However, Rsquared for gradient boosting is still relatively lower than the multiple linear regression. Hence, we will try to manually add in more tuning parameters in the gradient boosting method.
+Using gradient random forest boosting, it seems like the Rsquared values increased at depth = 2. Gradient boosting on the random forest has improved based on RMSE and Rsquared. Rsquared for gradient boosting is still relatively lower than the multiple linear regression. However, we will look into the error rates on the testing data.
 
 ```{r}
 ggplot(rf_gbm)
@@ -153,36 +173,35 @@ ggplot(rf_gbm)
 ```{r}
 # Testing the predicted values with test data
 vals_predicted_gbm <- predict(rf_gbm, newdata = dat_Test)
-vals_errors_gbm <- dat_Test$sum_Purchase-vals_predicted_gbm
+vals_errors_gbm <- dat_Test$sum_Purchase_log-vals_predicted_gbm
 RMSE_gbm <- sqrt(sum(vals_errors_gbm^2)/length(vals_errors_gbm))
 print(RMSE_gbm)
 ```
 
 ```{r}
 # R squared on predicted values
-Rsq_gbm <- cor(vals_predicted_gbm, dat_Test$sum_Purchase)^2
+Rsq_gbm <- cor(vals_predicted_gbm, dat_Test$sum_Purchase_log)^2
 print(Rsq_gbm)
 ```
 
-We see an improvement on Rsquared and RMSE on the gradient random forest model of 0.1696045 and 848294.2 rather than 0.1568235 and 854686.1 from multiple regression. However, only default parameters were tuned. Now I'd like to custom tune a wider range of parameters in the tunegrid on gradient boosting random forest.
+We see an improvement on Rsquared and RMSE on the gradient random forest model of 0.1534961 and 0.9153673 rather than 0.1472413 and 0.9178197 from multiple regression. However, only default parameters were tuned. Now I'd like to custom tune a wider range of parameters in the tunegrid on gradient boosting random forest.
 
 ```{r}
 # Running the gradient boosting random forest for more custom tuning parameters; keeping everything else the same 
 
 # Manually adding in a grid to tune three parameters:
 tunegrid <- expand.grid(n.trees = (1:10)*50, # number of trees, I originally tried up to 300 in number of trees, but it seemed like it's still going down. Now we will try up to 500 
-                        interaction.depth = 1:5, # interaction.depth = # of terminal nodes + 1
+                        interaction.depth = 1:10, # interaction.depth = # of terminal nodes + 1
                         # I originally tried interaction.depth = 1
                         shrinkage = c(0.1,0.01), # learning rate (how fast can the algorithm adapt to)
                         # Learning rate for 0.01 shows stability of decreasing in RMSE than 0.1. 
-                        n.minobsinnode = 20# minimum number of samples in the tree
+                        n.minobsinnode = 20 # minimum number of samples in the tree
                         ) 
-
 
 seed <- 10
 set.seed(seed)
 rf_gbm2 <- train(
-  sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
+  sum_Purchase_log~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
   method = 'gbm', #gradient boosting method; on each 
   metric=metric, #using RMSE (root mean square error) to define my loss function
   tuneGrid=tunegrid, # look above
@@ -190,8 +209,10 @@ rf_gbm2 <- train(
   preProc=preProc, #centering and scaling the predictors
   verbose=F
 )
-print(rf_gbm2)
+summary(rf_gbm2)
 ```
+
+Interestingly, we see that occupation 20 seem to have the heaviest influence out of all the other nodes. 
 
 ```{r}
 ggplot(rf_gbm2)
@@ -201,27 +222,28 @@ ggplot(rf_gbm2)
 ```{r}
 # Testing the predicted values with test data
 vals_predicted_gbm2 <- predict(rf_gbm2, newdata = dat_Test)
-vals_errors_gbm2 <- dat_Test$sum_Purchase-vals_predicted_gbm2
+vals_errors_gbm2 <- dat_Test$sum_Purchase_log-vals_predicted_gbm2
 RMSE_gbm2 <- sqrt(sum(vals_errors_gbm2^2)/length(vals_errors_gbm2))
 print(RMSE_gbm2)
 ```
 
 ```{r}
 # R squared on predicted values
-Rsq_gbm2 <- cor(vals_predicted_gbm2, dat_Test$sum_Purchase)^2
+Rsq_gbm2 <- cor(vals_predicted_gbm2, dat_Test$sum_Purchase_log)^2
 print(Rsq_gbm2)
 ```
 
+Measures seem to be 
 
 ## XGBoost Random Forest
 
-Next model I'd like to try is the XGBoost (eXtreme Gradient Boosting) random forest.
+Next model I'd like to try is the XGBoost (eXtreme Gradient Boosting) random forest. This model should be more powerful than the gradient boosting method we used above.
 
 ```{r}
 seed <- 10
 set.seed(seed)
 rf_xgbm <- train(
-  sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
+  sum_Purchase_log~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
   method = 'xgbTree', #gradient boosting method; on each 
   metric=metric, #using RMSE (root mean square error) to define my loss function
   trControl=control, # method="repeatedcv",number=10, repeats=3
@@ -237,8 +259,8 @@ Simply running the XGBoost Random Forest gave very bad rsquared correlations and
 # Manually adding in a grid to tune three parameters:
 tunegrid <- expand.grid(
   nrounds = 1000,
-  eta = c(0.0001, 0.00001, 0.000001), # eta (learning rate) of 0.01, 0.001 are not great. Need to use smaller numbers
-  max_depth = 1:10,
+  eta = c(0.0001, 0.00001), # eta (learning rate) of 0.01, 0.001 are not great. Need to use smaller numbers
+  max_depth = 1:5,
   gamma = 1,
   colsample_bytree = 0.8,
   min_child_weight = 1,
@@ -248,7 +270,7 @@ tunegrid <- expand.grid(
 seed <- 10
 set.seed(seed)
 rf_xgbm2 <- train(
-  sum_Purchase~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
+  sum_Purchase_log~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
   method = 'xgbTree', #eXtreme gradient boosting method
   metric=metric, #using RMSE (root mean square error) to define my loss function
   trControl=control, # method="repeatedcv",number=10, repeats=3
