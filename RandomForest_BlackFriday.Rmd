@@ -209,13 +209,16 @@ rf_gbm2 <- train(
   preProc=preProc, #centering and scaling the predictors
   verbose=F
 )
+print(rf_gbm2$bestTune) # Looking at the best tune information....
+rf_gbm2$finalModel
 summary(rf_gbm2)
 ```
 
-Interestingly, we see that occupation 20 seem to have the heaviest influence out of all the other nodes. 
+We see that City C sales are a lot different from the other cities. Within it, we see that genders are the second most influenced in sales amounts. Age categories of 55+ and 26-35 follow next.  
 
+## Performance of the parameter tunes
 ```{r}
-ggplot(rf_gbm2)
+ggplot(rf_gbm2) + geom_point()
 ```
 
 
@@ -233,7 +236,7 @@ Rsq_gbm2 <- cor(vals_predicted_gbm2, dat_Test$sum_Purchase_log)^2
 print(Rsq_gbm2)
 ```
 
-Measures seem to be 
+Measures seem to improve a little more with more tuning parameters
 
 ## XGBoost Random Forest
 
@@ -250,32 +253,29 @@ rf_xgbm <- train(
   preProc=preProc, #centering and scaling the predictors
   verbose=F
 )
-print(rf_xgbm)
+summary(rf_xgbm)
 ```
 
 Simply running the XGBoost Random Forest gave very bad rsquared correlations and high RMSEs. I will attempt to tune the paramters in XGBoost and see whether it will run better.
 
 ```{r}
-# Manually adding in a grid to tune three parameters:
-tunegrid <- expand.grid(
-  nrounds = 1000,
-  eta = c(0.0001, 0.00001), # eta (learning rate) of 0.01, 0.001 are not great. Need to use smaller numbers
-  max_depth = 1:5,
-  gamma = 1,
-  colsample_bytree = 0.8,
-  min_child_weight = 1,
-  subsample = 0.75
-)
-
-seed <- 10
-set.seed(seed)
-rf_xgbm2 <- train(
-  sum_Purchase_log~Gender+Age+Occupation+City_Category+Stay_In_Current_City_Years + Marital_Status, data=dat_Train, # model
-  method = 'xgbTree', #eXtreme gradient boosting method
-  metric=metric, #using RMSE (root mean square error) to define my loss function
-  trControl=control, # method="repeatedcv",number=10, repeats=3
-  preProc=preProc, #centering and scaling the predictors
-  tuneGrid=tunegrid,
-  verbose=F)
-print(rf_xgbm2)
+# Testing the predicted values with test data
+vals_predicted_xgbm <- predict(rf_xgbm, newdata = dat_Test)
+vals_errors_xgbm <- dat_Test$sum_Purchase_log-vals_predicted_xgbm
+RMSE_xgbm <- sqrt(sum(vals_errors_xgbm^2)/length(vals_errors_xgbm))
+print(RMSE_xgbm)
 ```
+
+```{r}
+# R squared on predicted values
+Rsq_xgbm <- cor(vals_predicted_xgbm, dat_Test$sum_Purchase_log)^2
+print(Rsq_xgbm)
+```
+### Parameter tuning plot for basic XGboost random forest
+```{r}
+plot(rf_xgbm)
+```
+
+In the middle of conducting these random forests, I realize I could probably conduct a PCA transformation on the exploratory variables. Because there are a lot of categorical variables, some variables might not be needed to explain the variations on the outcome values.
+
+The result of using PCA will be conducted in a separate R markdown folder. It will use PCA to run both a random forest and neural network.
